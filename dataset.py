@@ -1,23 +1,16 @@
 """
 Dataset classes for the ShapeNetCore subset (5 classes).
 
-Expected folder layout (adjust ROOT/paths to match what's actually in the zip
-once you unpack it -- ShapeNetCore subsets vary in exact structure, so check
-this first with e.g. `find . -maxdepth 3` before trusting these paths):
-
+Expected folder layout 
     root/
         <class_id_or_name>/
             <model_id>/
                 model.obj / model.off        <- mesh
                 model.binvox                 <- voxel grid
                 (point cloud is derived from mesh, see below)
-
-If your unzip looks different, only change the path-building lines marked
-with # ADAPT below -- the Dataset/DataLoader logic stays the same.
 """
 
 import os
-import glob
 import numpy as np
 import torch
 from torch.utils.data import Dataset
@@ -39,7 +32,6 @@ except ImportError:
 def read_binvox(file_path):
     """
     Reads a .binvox file and returns a 3D numpy array representing the voxel grid.
-    (Matches the course-provided reference reader exactly.)
     """
     with open(file_path, 'rb') as f:
         line = f.readline().decode().strip()
@@ -94,13 +86,13 @@ def build_file_index(root, classes=None):
 # ---------------------------------------------------------------------------
 class ShapeNetPointCloud(Dataset):
     """
-    Per the assignment's specified conversion strategy: use mesh VERTICES
-    directly as the point cloud (not surface sampling), converted to a fixed
+    For the assignments specified conversion strategy, we're using mesh vertices
+    directly as the point cloud, converted to a fixed
     size N:
         - if the mesh has more than N vertices, randomly sample N of them
         - if fewer, keep all vertices and zero-pad up to N
     This is intentionally simple (no uniform surface sampling) since the
-    models are already consistently oriented -- no need for rotational/
+    models are already consistently oriented and no need for rotational or
     translational invariance handling here.
     """
     def __init__(self, root, classes=None, num_points=1024, split_items=None):
@@ -144,7 +136,7 @@ class ShapeNetVoxel(Dataset):
         assert variant in ("solid", "surface")
         self.variant = variant
 
-        # Filter out any items missing both binvox variants -- some ShapeNet
+        # Filter out any items missing both binvox variants, some ShapeNet
         # models don't ship a solid voxelization, so fall back to surface,
         # and drop the item entirely (with a warning) if neither exists.
         self.items = []
